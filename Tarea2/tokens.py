@@ -2,6 +2,7 @@ import nltk, re
 from collections import Counter
 from numpy import linalg as LA
 import numpy as np
+import sys 
 
 def token(files):
     data = files.lower()
@@ -35,71 +36,80 @@ stop_words = [
 
 if __name__=="__main__":
     #fo = open('renew_split-06-rodrigo-fuenzalida_tagged','a')
-    with open('new_split-06-rodrigo-fuenzalida_tagged') as fi:
-        content = fi.readlines()
-        sentence = ''
-        wordsPocketINF = ''
-        wordsPocketNAV = ''
-        wordsPocketRES = ''
-        countINF = 0
-        countNAV = 0
-        countRES = 0
-        for i in content:
-            data = i.split('\t')
-            if data[0] == 'INF':
-                wordsPocketINF += data[1].split('\n')[0] + " "
-                countINF = countINF + 1
-            elif data[0] == 'NAV':
-                wordsPocketNAV += data[1].split('\n')[0] + " "
-                countNAV = countNAV + 1
-            elif data[0] == 'RES':
-                wordsPocketRES += data[1].split('\n')[0] + " "
-                countRES = countRES + 1
+    try:
+        arch = sys.argv[1]
+        with open(arch) as fi:
+            content = fi.readlines()
+            sentence = ''
+            wordsPocketINF = ''
+            wordsPocketNAV = ''
+            wordsPocketRES = ''
+            countINF = 0
+            countNAV = 0
+            countRES = 0
+            for i in content:
+                data = i.split('\t')
+                if data[0] == 'INF':
+                    wordsPocketINF += data[1].split('\n')[0] + " "
+                    countINF = countINF + 1
+                elif data[0] == 'NAV':
+                    wordsPocketNAV += data[1].split('\n')[0] + " "
+                    countNAV = countNAV + 1
+                elif data[0] == 'RES':
+                    wordsPocketRES += data[1].split('\n')[0] + " "
+                    countRES = countRES + 1
 
-        tokINF = token(wordsPocketINF)
-        tokNAV = token(wordsPocketNAV)
-        tokRES = token(wordsPocketRES)
+            tokINF = token(wordsPocketINF)
+            tokNAV = token(wordsPocketNAV)
+            tokRES = token(wordsPocketRES)
 
-        finalTokINF = []
-        for j in tokINF:
-            try:
-                if stop_words.index(j[0]):
-                    pass
-            except:
-                finalTokINF.append(j[1])
-        
-        finalTokNAV = []
-        for k in tokNAV:
-            try:
-                if stop_words.index(j[0]):
-                    pass
-            except:
-                finalTokNAV.append(j[1])
-        
-        finalTokRES = []
-        for l in tokRES:
-            try:
-                if stop_words.index(j[0]):
-                    pass
-            except:
-                finalTokRES.append(j[1])
-        
-        globalVector = []
-        for j in finalTokINF:
-            globalVector.append(j)
-        for k in finalTokNAV:
-            globalVector.append(k)
-        for l in finalTokRES:
-            globalVector.append(l)
-        
-        finalVectorINF = []
-        accountGlobal = float(len(globalVector))
-        accountINF = float(len(finalTokINF))
-        accountNAV = float(len(finalTokNAV))
-        accountRES = float(len(finalTokRES))
-        print "%d/%d = %.2f" % (accountGlobal, accountINF, accountGlobal/accountINF)
-        print "%d/%d = %.2f" % (accountGlobal, accountNAV, accountGlobal/accountNAV)
-        print "%d/%d = %.2f" % (accountGlobal, accountRES, accountGlobal/accountRES)
+            finalTokINF = []
+            for j in tokINF:
+                try:
+                    if stop_words.index(j[0]):
+                        pass
+                except:
+                    finalTokINF.append(j[1])
+            
+            finalTokNAV = []
+            for k in tokNAV:
+                try:
+                    if stop_words.index(j[0]):
+                        pass
+                except:
+                    finalTokNAV.append(j[1])
+            
+            finalTokRES = []
+            for l in tokRES:
+                try:
+                    if stop_words.index(j[0]):
+                        pass
+                except:
+                    finalTokRES.append(j[1])
+            
+            globalVector = []
+            for j in finalTokINF:
+                globalVector.append(j)
+            for k in finalTokNAV:
+                globalVector.append(k)
+            for l in finalTokRES:
+                globalVector.append(l)
+            
+            finalVectorINF = []
+            accountGlobal = float(len(globalVector))
+            accountINF = float(len(finalTokINF))
+            accountNAV = float(len(finalTokNAV))
+            accountRES = float(len(finalTokRES))
+            print "%d/%d = %.2f" % (accountGlobal, accountINF, accountGlobal/accountINF)
+            print "%d/%d = %.2f" % (accountGlobal, accountNAV, accountGlobal/accountNAV)
+            print "%d/%d = %.2f" % (accountGlobal, accountRES, accountGlobal/accountRES)
+    except:
+        print
+        print "Modo de uso:"
+        print "python tokens.py [nombre archivo]"
+        print
+
+    
         
 
         #print globalVector
