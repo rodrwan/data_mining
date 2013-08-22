@@ -1,4 +1,4 @@
-Tarea 2 data_mining
+Tarea 2 Data Mining
 ===================
 
 repositorio para mantener script de utilidad para el ramo
