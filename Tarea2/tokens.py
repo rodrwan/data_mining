@@ -1,3 +1,17 @@
+"""
+
+# 
+#  Muchas dudas
+#  pregunta 1 aun no resuelta
+#  pregunta 2 muuuuy lejos de ser resuelta
+#  pregunta 3
+#  pregunta 4
+#  pregunta 5
+#  pregunta 6
+#  pregunta 7
+# 
+
+"""
 import nltk, re
 from collections import Counter
 from numpy import linalg as LA
@@ -53,6 +67,7 @@ def chiSquered(arrA, arrB):
 
     return finalArray, (finalArray.transpose() == finalArray).all()
 """
+
 def write(files, data):
     f = open (files, "w")
     f.write(data)
