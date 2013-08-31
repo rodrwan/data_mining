@@ -1,18 +1,3 @@
-"""
-http://stackoverflow.com/questions/4131982/count-the-number-of-elements-of-same-value-in-python
-http://stackoverflow.com/questions/2600191/how-to-count-the-occurrences-of-a-list-item-in-python
-# 
-#  Muchas dudas
-#  pregunta 1 aun no resuelta
-#  pregunta 2 muuuuy lejos de ser resuelta
-#  pregunta 3
-#  pregunta 4
-#  pregunta 5
-#  pregunta 6
-#  pregunta 7
-# 
-
-"""
 import nltk, re
 from collections import Counter
 from numpy import linalg as LA
@@ -50,39 +35,83 @@ def token(files):
 """
 def manhattan(arrA, arrB):
     suma = 0.0
-    for i in range(0, len(arrA)):
-        suma += abs(arrA[i] - arrB[i])
-    return sqrt(suma)
+    tok = token(arrB)
+    num = []
+    letterTok = []
+    for i in tok:
+        letterTok.append(i[0])
+
+    for j in arrA.keys():
+        if j in letterTok:
+            num.append(1)
+        else:
+            num.append(0)
+
+    k = 0
+    for j in arrA.keys():
+        suma += abs(arrA[j] - num[k])
+        k += 1
+    return suma
+
 """
 #
 # Calculo de distancia con 
-# Algoritmo camberra
+# Algoritmo canberra
 # 
 """
 def canberra(arrA, arrB):
     suma = 0.0
     numerador = 0.0
     denominador = 0.0
-    for i in range(0, len(arrA)):
-        numerador = abs(arrA[i] - arrB[i])
-        denominador = arrA[i] + arrB[i]
-        suma += numerador/denominador
-    return suma
+    tok = token(arrB)
+    num = []
+    letterTok = []
+    for i in tok:
+        letterTok.append(i[0])
 
+    for j in arrA.keys():
+        if j in letterTok:
+            num.append(1)
+        else:
+            num.append(0)
+
+    k = 0
+    for j in arrA.keys():
+        try:
+            numerador = abs(arrA[j] - num[k])
+            denominador = arrA[j] + num[k]
+            suma += numerador/denominador
+        except:
+            suma += 0
+        k += 1
+    return suma
 """
 #
 # Calculo de distancia con 
 # Algoritmo Squared Cord
 # 
 """
-def card(arrA, arrB):
+def cord(arrA, arrB):
     suma = 0.0
     number = 0.0
-    for i in range(0, len(arrA)):
-        number = sqrt(arrA[i]) - sqrt(arrB[i])
-        suma += pow(number, 2)
-    return suma
+    tok = token(arrB)
+    num = []
+    letterTok = []
+    for i in tok:
+        letterTok.append(i[0])
 
+    for j in arrA.keys():
+        if j in letterTok:
+            num.append(1)
+        else:
+            num.append(0)
+
+    k = 0
+    for j in arrA.keys():
+        number = sqrt(arrA[j]) - sqrt(num[k])
+        suma += pow(number, 2)
+        k += 1
+    return suma
 """
 #
 # Calculo de distancia con 
@@ -94,42 +123,71 @@ def chiSquared(arrA, arrB):
     numerador = 0.0
     denominador = 0.0
     number = 0.0
-    for i in range(0, len(arrA)):
-        number = arrA[i] - arrB[i]
-        numerador = pow(number, 2)
-        denominador = arrA[i] + arrB[i]
-        suma += numerador/denominador
+    tok = token(arrB)
+    num = []
+    letterTok = []
+    for i in tok:
+        letterTok.append(i[0])
+
+    for j in arrA.keys():
+        if j in letterTok:
+            num.append(1)
+        else:
+            num.append(0)
+
+    k = 0
+    for j in arrA.keys():
+        try:
+            number = arrA[j] - num[k]
+            numerador = pow(number, 2)
+            denominador = arrA[j] + num[k]
+            suma += numerador/denominador
+        except:
+            suma +=0
     return suma
 
-"""def coseno(bigArray):
-    bigArray_1 = np.array(bigArray)
-    finalArray = np.zeros(shape=(30,30))
+def f_score(pres, recall, beta):
+    numerador = pres*recall
+    denominador = (pow(beta,2)*pres)+recall
+    factor = 1+pow(beta, 2)
+    return factor*(numerador/denominador)
 
-    for i in range(len(bigArray_1)):
-        for j in range(len(bigArray_1)):
-            finalArray[i][j] = "{0:.1f}".format( np.dot(bigArray_1[i], bigArray_1[j])/(LA.norm(bigArray_1[i], 2)*LA.norm(bigArray_1[j], 2)) )
-
-    return finalArray, (finalArray.transpose() == finalArray).all()
 """
-
+ Funciones auxiliares
+"""
 def write(files, data):
     f = open (files, "w")
     f.write(data)
     f.close()
 
+def min_val(val1, val2, val3):
+    mini = min(val1, val2, val3)
+    if mini == val1:
+        lower = "INF"
+    elif mini == val2:
+        lower = "NAV"
+    elif mini == val3:
+        lower = "RES"
 
+    return lower
 
+"""
+PARTE PRINCIPAL PROGRAMA
+"""
 if __name__=="__main__":
-    #fo = open('renew_split-06-rodrigo-fuenzalida_tagged','a')
-    try:
+    #try:
         arch = sys.argv[1]
+        algo = sys.argv[2]
         fi =  open(arch, 'r')
         content = fi.readlines()
         globalWords = {}
         countINF = 0.0
         countNAV = 0.0
         countRES = 0.0
+        querys = []
+        category = []
         for i in content:
+
             data = i.split('\t')
             if data[0] == 'INF':
                 countINF += 1
@@ -137,8 +195,12 @@ if __name__=="__main__":
                 countNAV += 1
             elif data[0] == 'RES':
                 countRES += 1
-
-            for j in token(data[1].split('\n')[0].rstrip()):
+            category.append(data[0])
+            querys.append(data[1].rstrip())
+            tok = token(data[1].split('\n')[0].rstrip())
+            query = []
+            
+            for j in tok:
                 if str(j[0]) in globalWords:
                     globalWords[str(j[0])] += j[1]
                 else:
@@ -153,12 +215,16 @@ if __name__=="__main__":
             bag_of_word_num.append(globalWords[word])
 
         arrayInf = [0] * len(bag_of_word)
+        tempArrayInf = {}
         scalarInf = 1/countINF
+
         arrayNav = [0] * len(bag_of_word)
         scalarNav = 1/countNAV
+        tempArrayNav = {}
+        
         arrayRes = [0] * len(bag_of_word)
         scalarRes = 1/countRES
-
+        tempArrayRes = {}
 
         for i in content:
             data = i.split('\t')
@@ -171,138 +237,243 @@ if __name__=="__main__":
                         pos = bag_of_word.index( k[0] )
                         if bag_of_word.index( k[0] ) >= 0:
                             arrayInf[pos] += k[1]
+                            if str(k[0]) in tempArrayInf:
+                                tempArrayInf[str(k[0])] += k[1]
+                            else:
+                                tempArrayInf[str(k[0])] = k[1]
                 except:
                     pass
 
-            elif data[0] == 'NAV':
+            if data[0] == 'NAV':
                 try:
                     tokens = token(string)
                     for k in tokens:
                         pos = bag_of_word.index( k[0] )
                         if bag_of_word.index( k[0] ) >= 0:
                             arrayNav[pos] += k[1]
+                            if str(k[0]) in tempArrayNav:
+                                tempArrayNav[str(k[0])] += k[1]
+                            else:
+                                tempArrayNav[str(k[0])] = k[1]
                 except:
                     pass
 
-            elif data[0] == 'RES':
+            if data[0] == 'RES':
                 try:
                     tokens = token(string)
                     for k in tokens:
                         pos = bag_of_word.index( k[0] )
                         if bag_of_word.index( k[0] ) >= 0:
                             arrayRes[pos] += k[1]
+                            if str(k[0]) in tempArrayRes:
+                                tempArrayRes[str(k[0])] += k[1]
+                            else:
+                                tempArrayRes[str(k[0])] = k[1]
                 except:
                     pass
-        
+
         totalInf = 0.0
         totalNav = 0.0
         totalRes = 0.0
+        tempArrayInf = {}
+        tempArrayNav = {}
+        tempArrayRes = {}
         for data in globalWords.keys():
             string = data
-            totalInf += arrayInf[bag_of_word.index( string )]*scalarInf
-            totalNav += arrayNav[bag_of_word.index( string )]*scalarNav
-            totalRes += arrayRes[bag_of_word.index( string )]*scalarRes
+            tempArrayInf[string] = arrayInf[bag_of_word.index( string )]*scalarInf
+            tempArrayNav[string] = arrayNav[bag_of_word.index( string )]*scalarNav
+            tempArrayRes[string] = arrayRes[bag_of_word.index( string )]*scalarRes
 
-        print totalInf
-        print totalNav
-        print totalRes
-        print 
-        print "INF"
-        print "Manhattan: " + str(manhattan(arrayInf, bag_of_word_num))
-        print "Canberra: " + str(canberra(arrayInf, bag_of_word_num))
-        print "Squared Cord: " + str(card(arrayInf, bag_of_word_num))
-        print "Squared Chi-Squered: " + str(chiSquared(arrayInf, bag_of_word_num))
-        print
-        print "NAV"
-        print "Manhattan: " + str(manhattan(arrayNav, bag_of_word_num))
-        print "Canberra: " + str(canberra(arrayNav, bag_of_word_num))
-        print "Squared Cord: " + str(card(arrayNav, bag_of_word_num))
-        print "Squared Chi-Squered: " + str(chiSquared(arrayNav, bag_of_word_num))
-        print
-        print "RES"
-        print "Manhattan: " + str(manhattan(arrayRes, bag_of_word_num))
-        print "Canberra: " + str(canberra(arrayRes, bag_of_word_num))
-        print "Squared Cord: " + str(card(arrayRes, bag_of_word_num))
-        print "Squared Chi-Squered: " + str(chiSquared(arrayRes, bag_of_word_num))
-        print
-        # for data in globalWords.keys():
-        #     try:
-        #         string = data
-        #         total = arrayInf[bag_of_word.index( string )]+arrayNav[bag_of_word.index( string )]+arrayRes[bag_of_word.index( string )]
-                
-        #         if total == globalWords[data]:
-        #             print bag_of_word[bag_of_word.index( string )] + " -> " + str( total ) + " => " + str(data[1]) + " Exito"
+        if algo == "man":
+            print "Manhattan: "
+            inf = []
+            nav = []
+            res = []
+            for query in querys:
+                inf.append(manhattan(tempArrayInf, query))
+                nav.append(manhattan(tempArrayNav, query))
+                res.append(manhattan(tempArrayRes, query))
 
-        #         else:
-        #             print "==================================================================="
-        #             print "fallo en => " + string
-        #             print bag_of_word[bag_of_word.index( string )] + " -> " \
-        #             + str(arrayInf[bag_of_word.index( string )]) + "  " \
-        #             + str(arrayNav[bag_of_word.index( string )]) + "  " \
-        #             + str(arrayRes[bag_of_word.index( string )]) + " = " \
-        #             + str( total ) + " => " + str(data[1])
-        #             print "==================================================================="
+            accuracy = 0.0
+            n_press_inf = 0.0
+            c_press_inf = 0.0
+            n_press_nav = 0.0
+            c_press_nav = 0.0
+            n_press_res = 0.0
+            c_press_res = 0.0
+            for i in range(0, len(inf)):
+                if min_val(inf[i] , nav[i] , res[i]) == category[i]:
+                    accuracy += 1.0
+                print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
+                sec = min_val(inf[i] , nav[i] , res[i])
+                if sec == "INF":
+                    n_press_inf += 1.0
+                if category[i] == "INF":
+                    c_press_inf += 1.0
+                if sec == "NAV":
+                    n_press_nav += 1.0
+                if category[i] == "NAV":
+                    c_press_nav += 1.0
+                if sec == "RES":
+                    n_press_res += 1.0
+                if category[i] == "RES":
+                    c_press_res += 1.0
 
-        #     except:
-        #         pass
-        
-        
-        # finalVectorINF = []
+            
+        elif algo == "can":
+            print "Canberra: "
+            inf = []
+            nav = []
+            res = []
+            for query in querys:
+                inf.append(canberra(tempArrayInf, query))
+                nav.append(canberra(tempArrayNav, query))
+                res.append(canberra(tempArrayRes, query))
 
-        # accountGlobal = float(len(globalVector))
-        # print globalVectorINFNum
-        # print "%d/%d = %.2f" % (accountGlobal, countINF, accountGlobal/countINF)
-        plt.plot(arrayInf)
-        plt.ylabel('some numbers')
-        plt.show()
+            accuracy = 0.0
+            n_press_inf = 0.0
+            c_press_inf = 0.0
+            n_press_nav = 0.0
+            c_press_nav = 0.0
+            n_press_res = 0.0
+            c_press_res = 0.0
+            for i in range(0, len(inf)):
+                if min_val(inf[i] , nav[i] , res[i]) == category[i]:
+                    accuracy += 1.0
+                print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
+                sec = min_val(inf[i] , nav[i] , res[i])
+                if sec == "INF":
+                    n_press_inf += 1.0
+                if category[i] == "INF":
+                    c_press_inf += 1.0
+                if sec == "NAV":
+                    n_press_nav += 1.0
+                if category[i] == "NAV":
+                    c_press_nav += 1.0
+                if sec == "RES":
+                    n_press_res += 1.0
+                if category[i] == "RES":
+                    c_press_res += 1.0
 
-        # print globalVectorNAVNum
-        # print "%d/%d = %.2f" % (accountGlobal, countNAV, accountGlobal/countNAV)
-        plt.plot(arrayNav)
-        plt.ylabel('some numbers')
-        plt.show()
-        
-        # print globalVectorRESNum
-        # print "%d/%d = %.2f" % (accountGlobal, countRES, accountGlobal/countRES)
-        plt.plot(arrayRes)
-        plt.ylabel('some numbers')
-        plt.show()
-        # """
-    except:
+        elif algo == "cor":
+            print "Squared Cord: "
+            inf = []
+            nav = []
+            res = []
+            for query in querys:
+                inf.append(cord(tempArrayInf, query))
+                nav.append(cord(tempArrayNav, query))
+                res.append(cord(tempArrayRes, query))
+
+            accuracy = 0.0
+            n_press_inf = 0.0
+            c_press_inf = 0.0
+            n_press_nav = 0.0
+            c_press_nav = 0.0
+            n_press_res = 0.0
+            c_press_res = 0.0
+            for i in range(0, len(inf)):
+                if min_val(inf[i] , nav[i] , res[i]) == category[i]:
+                    accuracy += 1.0
+                print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
+                sec = min_val(inf[i] , nav[i] , res[i])
+                if sec == "INF":
+                    n_press_inf += 1.0
+                if category[i] == "INF":
+                    c_press_inf += 1.0
+                if sec == "NAV":
+                    n_press_nav += 1.0
+                if category[i] == "NAV":
+                    c_press_nav += 1.0
+                if sec == "RES":
+                    n_press_res += 1.0
+                if category[i] == "RES":
+                    c_press_res += 1.0
+
+        elif algo == "chi":
+            print "Squared Chi-squered: "
+            inf = []
+            nav = []
+            res = []
+            for query in querys:
+                inf.append(chiSquared(tempArrayInf, query))
+                nav.append(chiSquared(tempArrayNav, query))
+                res.append(chiSquared(tempArrayRes, query))
+            
+            accuracy = 0.0
+            n_press_inf = 0.0
+            c_press_inf = 0.0
+            n_press_nav = 0.0
+            c_press_nav = 0.0
+            n_press_res = 0.0
+            c_press_res = 0.0
+            for i in range(0, len(inf)):
+                if min_val(inf[i] , nav[i] , res[i]) == category[i]:
+                    accuracy += 1.0
+                print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
+                sec = min_val(inf[i] , nav[i] , res[i])
+                if sec == "INF":
+                    n_press_inf += 1.0
+                if category[i] == "INF":
+                    c_press_inf += 1.0
+                if sec == "NAV":
+                    n_press_nav += 1.0
+                if category[i] == "NAV":
+                    c_press_nav += 1.0
+                if sec == "RES":
+                    n_press_res += 1.0
+                if category[i] == "RES":
+                    c_press_res += 1.0
+ 
+        else:
+            print "Opcion incorrecta"
+            print
+            print "Modo de uso:"
+            print "python tokens.py [nombre archivo] [man|can|cor|chi]"
+            print
         print
-        print "Modo de uso:"
-        print "python tokens.py [nombre archivo]"
-        print
-    finally:
-        fi.close()
+        # print str(n_press_inf) + " | " + str(n_press_nav) + " | " + str(n_press_res)
+        # print "Accuracy: " + str(accuracy/len(category))
+        # press_inf = (c_press_inf-n_press_inf)/n_press_inf
+        # recall_inf = (n_press_inf-c_press_inf)/c_press_inf
+        # print "INF"
+        # print "Precision: " + str(press_inf)
+        # print "Recall: " + str(recall_inf)
+        # print "F-Score: " + str(f_score(press_inf, recall_inf, 1))
+        # press_nav = (c_press_nav-n_press_nav)/n_press_nav
+        # recall_nav = (n_press_nav-c_press_nav)/c_press_nav
+        # print "NAV"
+        # print "Precision: " + str(press_nav)
+        # print "Recall: " + str(recall_nav)
+        # print "F-Score: " + str(f_score(press_nav, recall_nav, 1))
+        # press_res = (c_press_res-n_press_res)/n_press_res
+        # recall_res = (n_press_res-c_press_res)/c_press_res
+        # print "RES"
+        # print "Precision: " + str(press_res)
+        # print "Recall: " + str(recall_res)
+        # print "F-Score: " + str(f_score(press_res, recall_res, 1))
+    # except:
+    #     print
+    #     print "Modo de uso:"
+    #     print "python tokens.py [nombre archivo] [man|can|cor|chi]"
+    #     print
+    # finally:
+    #     fi.close()
     
-        
+#pasar vector de consulta no global
+#accuracy function
 
-        #print globalVector
-
-        # x = np.array(general_vector)
-        # vector_mag = np.linalg.norm(x)
-        # vector_centroide_inf = []
-        # vector_centroide_nav = []
-        # vector_centroide_res = []
-        # for j in general_vector:
-        #     vector_centroide_inf.append(float(j/countINF))
-
-        # for j in general_vector:
-        #     vector_centroide_nav.append(float(j/countNAV))
-        
-        # for j in general_vector:
-        #     vector_centroide_res.append(float(j/countRES))
-        
-        # print vector_centroide_inf
-
-        #x = np.array([1,2,3,4,5])
-        #np.linalg.norm(x)
-
-        # for i in content:
-        #     general_vector = []
-        #     data =  i.split('\t')
-        #     tok = token(data[1])
-        #     for j in  tok:
-        #         general_vector.append(j[1])
-        #     fo.write(data[0] + "\t" + data[1].split('\n')[0] + "\t" + str(general_vector) + "\n")
+#3000  
+#   dinf dnav dres auraccy manual
+# 1                   inf    inf
+# 2
+# 3
+# .
+# .
+# .
+# .
+# 3000
+# diferencia entre metrica de distancia y metrica de similitud.
+# 
+# 
+# 
