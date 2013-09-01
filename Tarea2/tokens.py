@@ -36,17 +36,20 @@ def token(files):
 def manhattan(arrA, arrB):
     suma = 0.0
     tok = token(arrB)
-    num = []
-    letterTok = []
+    num, letterTok, letterTokFrec = [], [], []
+    
     for i in tok:
         letterTok.append(i[0])
-
+        letterTokFrec.append(i[1])
+    
+    k = 0
     for j in arrA.keys():
         if j in letterTok:
-            num.append(1)
+            num.append(letterTokFrec[k])
+            k +=1
         else:
             num.append(0)
-
+        
     k = 0
     for j in arrA.keys():
         suma += abs(arrA[j] - num[k])
@@ -64,14 +67,17 @@ def canberra(arrA, arrB):
     numerador = 0.0
     denominador = 0.0
     tok = token(arrB)
-    num = []
-    letterTok = []
+    num, letterTok, letterTokFrec = [], [], []
+
     for i in tok:
         letterTok.append(i[0])
+        letterTokFrec.append(i[1])
 
+    k = 0
     for j in arrA.keys():
         if j in letterTok:
-            num.append(1)
+            num.append(letterTokFrec[k])
+            k +=1
         else:
             num.append(0)
 
@@ -95,14 +101,17 @@ def cord(arrA, arrB):
     suma = 0.0
     number = 0.0
     tok = token(arrB)
-    num = []
-    letterTok = []
+    num, letterTok, letterTokFrec = [], [], []
+
     for i in tok:
         letterTok.append(i[0])
+        letterTokFrec.append(i[1])
 
+    k = 0
     for j in arrA.keys():
         if j in letterTok:
-            num.append(1)
+            num.append(letterTokFrec[k])
+            k +=1
         else:
             num.append(0)
 
@@ -123,15 +132,17 @@ def chiSquared(arrA, arrB):
     numerador = 0.0
     denominador = 0.0
     number = 0.0
-    tok = token(arrB)
-    num = []
-    letterTok = []
+    num, letterTok, letterTokFrec = [], [], []
+
     for i in tok:
         letterTok.append(i[0])
+        letterTokFrec.append(i[1])
 
+    k = 0
     for j in arrA.keys():
         if j in letterTok:
-            num.append(1)
+            num.append(letterTokFrec[k])
+            k +=1
         else:
             num.append(0)
 
@@ -150,7 +161,10 @@ def f_score(pres, recall, beta):
     numerador = pres*recall
     denominador = (pow(beta,2)*pres)+recall
     factor = 1+pow(beta, 2)
-    return factor*(numerador/denominador)
+    try:
+        return factor*(numerador/denominador)
+    except:
+        return 0
 
 """
  Funciones auxiliares
@@ -181,11 +195,9 @@ if __name__=="__main__":
         fi =  open(arch, 'r')
         content = fi.readlines()
         globalWords = {}
-        countINF = 0.0
-        countNAV = 0.0
-        countRES = 0.0
-        querys = []
-        category = []
+        countINF, countNAV, countRES = 0.0, 0.0, 0.0
+        querys, category = [], []
+
         for i in content:
 
             data = i.split('\t')
@@ -206,9 +218,8 @@ if __name__=="__main__":
                 else:
                     globalWords[str(j[0])] = j[1]
 
-        bag_of_word = []
-        bag_of_word_num = []
-        bag_of_word_count = 0
+        bag_of_word, bag_of_word_num, bag_of_word_count = [], [], 0
+
         for word in globalWords.keys():
             bag_of_word.append(word)
             bag_of_word_count += globalWords[word]
@@ -221,11 +232,11 @@ if __name__=="__main__":
         arrayNav = [0] * len(bag_of_word)
         scalarNav = 1/countNAV
         tempArrayNav = {}
-        
+
         arrayRes = [0] * len(bag_of_word)
         scalarRes = 1/countRES
         tempArrayRes = {}
-
+        
         for i in content:
             data = i.split('\t')
             string = data[1].split('\n')[0].rstrip()
@@ -278,6 +289,7 @@ if __name__=="__main__":
         tempArrayInf = {}
         tempArrayNav = {}
         tempArrayRes = {}
+
         for data in globalWords.keys():
             string = data
             tempArrayInf[string] = arrayInf[bag_of_word.index( string )]*scalarInf
@@ -286,57 +298,54 @@ if __name__=="__main__":
 
         if algo == "man":
             print "Manhattan: "
-            inf = []
-            nav = []
-            res = []
+            inf, nav, res = [], [], []
+
             for query in querys:
                 inf.append(manhattan(tempArrayInf, query))
                 nav.append(manhattan(tempArrayNav, query))
                 res.append(manhattan(tempArrayRes, query))
 
             accuracy = 0.0
-            n_press_inf = 0.0
-            c_press_inf = 0.0
-            n_press_nav = 0.0
-            c_press_nav = 0.0
-            n_press_res = 0.0
-            c_press_res = 0.0
+            n_press_inf, c_press_inf = 0.0, 0.0
+            n_press_nav, c_press_nav = 0.0, 0.0
+            n_press_res, c_press_res = 0.0, 0.0
+
             for i in range(0, len(inf)):
-                if min_val(inf[i] , nav[i] , res[i]) == category[i]:
+                cat = min_val(inf[i] , nav[i] , res[i])
+                if cat == category[i]:
                     accuracy += 1.0
-                print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
-                sec = min_val(inf[i] , nav[i] , res[i])
-                if sec == "INF":
+                print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], cat, category[i])
+                
+                if cat == "INF" and category[i] == "INF":
                     n_press_inf += 1.0
                 if category[i] == "INF":
                     c_press_inf += 1.0
-                if sec == "NAV":
+                if cat == "NAV" and category[i] == "NAV":
                     n_press_nav += 1.0
                 if category[i] == "NAV":
                     c_press_nav += 1.0
-                if sec == "RES":
+                if cat == "RES" and category[i] == "RES":
                     n_press_res += 1.0
                 if category[i] == "RES":
                     c_press_res += 1.0
 
-            
+                print n_press_inf
+                print n_press_nav
+                print n_press_res
         elif algo == "can":
             print "Canberra: "
-            inf = []
-            nav = []
-            res = []
+            inf, nav, res = [], [], []
+
             for query in querys:
                 inf.append(canberra(tempArrayInf, query))
                 nav.append(canberra(tempArrayNav, query))
                 res.append(canberra(tempArrayRes, query))
 
             accuracy = 0.0
-            n_press_inf = 0.0
-            c_press_inf = 0.0
-            n_press_nav = 0.0
-            c_press_nav = 0.0
-            n_press_res = 0.0
-            c_press_res = 0.0
+            n_press_inf, c_press_inf = 0.0, 0.0
+            n_press_nav, c_press_nav = 0.0, 0.0
+            n_press_res, c_press_res = 0.0, 0.0
+
             for i in range(0, len(inf)):
                 if min_val(inf[i] , nav[i] , res[i]) == category[i]:
                     accuracy += 1.0
@@ -357,21 +366,18 @@ if __name__=="__main__":
 
         elif algo == "cor":
             print "Squared Cord: "
-            inf = []
-            nav = []
-            res = []
+            inf, nav, res = [], [], []
+
             for query in querys:
                 inf.append(cord(tempArrayInf, query))
                 nav.append(cord(tempArrayNav, query))
                 res.append(cord(tempArrayRes, query))
 
             accuracy = 0.0
-            n_press_inf = 0.0
-            c_press_inf = 0.0
-            n_press_nav = 0.0
-            c_press_nav = 0.0
-            n_press_res = 0.0
-            c_press_res = 0.0
+            n_press_inf, c_press_inf = 0.0, 0.0
+            n_press_nav, c_press_nav = 0.0, 0.0
+            n_press_res, c_press_res = 0.0, 0.0
+
             for i in range(0, len(inf)):
                 if min_val(inf[i] , nav[i] , res[i]) == category[i]:
                     accuracy += 1.0
@@ -392,35 +398,32 @@ if __name__=="__main__":
 
         elif algo == "chi":
             print "Squared Chi-squered: "
-            inf = []
-            nav = []
-            res = []
+            inf, nav, res = [], [], []
+
             for query in querys:
                 inf.append(chiSquared(tempArrayInf, query))
                 nav.append(chiSquared(tempArrayNav, query))
                 res.append(chiSquared(tempArrayRes, query))
             
             accuracy = 0.0
-            n_press_inf = 0.0
-            c_press_inf = 0.0
-            n_press_nav = 0.0
-            c_press_nav = 0.0
-            n_press_res = 0.0
-            c_press_res = 0.0
+            n_press_inf, c_press_inf = 0.0, 0.0
+            n_press_nav, c_press_nav = 0.0, 0.0
+            n_press_res, c_press_res = 0.0, 0.0
+
             for i in range(0, len(inf)):
                 if min_val(inf[i] , nav[i] , res[i]) == category[i]:
                     accuracy += 1.0
                 print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
                 sec = min_val(inf[i] , nav[i] , res[i])
-                if sec == "INF":
+                if sec == "INF" and category[i] == "INF":
                     n_press_inf += 1.0
                 if category[i] == "INF":
                     c_press_inf += 1.0
-                if sec == "NAV":
+                if sec == "NAV" and category[i] == "NAV":
                     n_press_nav += 1.0
                 if category[i] == "NAV":
                     c_press_nav += 1.0
-                if sec == "RES":
+                if sec == "RES" and category[i] == "RES":
                     n_press_res += 1.0
                 if category[i] == "RES":
                     c_press_res += 1.0
@@ -432,26 +435,28 @@ if __name__=="__main__":
             print "python tokens.py [nombre archivo] [man|can|cor|chi]"
             print
         print
-        # print str(n_press_inf) + " | " + str(n_press_nav) + " | " + str(n_press_res)
-        # print "Accuracy: " + str(accuracy/len(category))
-        # press_inf = (c_press_inf-n_press_inf)/n_press_inf
-        # recall_inf = (n_press_inf-c_press_inf)/c_press_inf
-        # print "INF"
-        # print "Precision: " + str(press_inf)
-        # print "Recall: " + str(recall_inf)
-        # print "F-Score: " + str(f_score(press_inf, recall_inf, 1))
-        # press_nav = (c_press_nav-n_press_nav)/n_press_nav
-        # recall_nav = (n_press_nav-c_press_nav)/c_press_nav
-        # print "NAV"
-        # print "Precision: " + str(press_nav)
-        # print "Recall: " + str(recall_nav)
-        # print "F-Score: " + str(f_score(press_nav, recall_nav, 1))
-        # press_res = (c_press_res-n_press_res)/n_press_res
-        # recall_res = (n_press_res-c_press_res)/c_press_res
-        # print "RES"
-        # print "Precision: " + str(press_res)
-        # print "Recall: " + str(recall_res)
-        # print "F-Score: " + str(f_score(press_res, recall_res, 1))
+        print str(n_press_inf) + " | " + str(n_press_nav) + " | " + str(n_press_res)
+        print str(c_press_inf) + " | " + str(c_press_nav) + " | " + str(c_press_res)
+        print
+        print "Accuracy: " + str(accuracy/3000)
+        press_inf = n_press_inf/c_press_inf #abs(c_press_inf-n_press_inf)
+        recall_inf = abs(c_press_inf-n_press_inf)
+        print "INF"
+        print "Precision: " + str(press_inf)
+        print "Recall: " + str(recall_inf)
+        print "F-Score: " + str(f_score(press_inf, recall_inf, 1))
+        press_nav = abs(c_press_nav-n_press_nav)
+        recall_nav = abs(c_press_nav-n_press_nav)
+        print "NAV"
+        print "Precision: " + str(press_nav)
+        print "Recall: " + str(recall_nav)
+        print "F-Score: " + str(f_score(press_nav, recall_nav, 1))
+        press_res = abs(c_press_res-n_press_res)
+        recall_res = abs(c_press_res-n_press_res)
+        print "RES"
+        print "Precision: " + str(press_res)
+        print "Recall: " + str(recall_res)
+        print "F-Score: " + str(f_score(press_res, recall_res, 1))
     # except:
     #     print
     #     print "Modo de uso:"
