@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*- 
 import nltk, re, sys 
 from collections import Counter
 from numpy import linalg as LA
@@ -354,45 +356,61 @@ if __name__=="__main__":
                     accuracy += 1.0
                 #print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
                 
-                if cat == "INF" and category[i] == "INF": # precision
+                # número de preguntas respondidas correctamente   
+                if cat == "INF" and category[i] == "INF": 
                     p_press_inf += 1.0
                 elif cat == "NAV" and category[i] == "NAV":
                     p_press_nav += 1.0
                 elif cat == "RES" and category[i] == "RES":
                     p_press_res += 1.0
                 
-                if cat == "INF": # recall
+                # número de preguntas intentadas
+                if cat == "INF": 
                     r_press_inf += 1.0
                 elif cat == "NAV":
                     r_press_nav += 1.0
                 elif cat == "RES":
                     r_press_res += 1.0
 
-                if category[i] == "INF": # total
+                # total
+                if category[i] == "INF": 
                     total_inf += 1.0
                 elif category[i] == "NAV":
                     total_nav += 1.0
                 elif category[i] == "RES":
                     total_res += 1.0
 
-            # print str(total_inf) + " | " + str(total_nav) + " | " + str(total_res)
-            # print str(p_press_inf) + " | " + str(p_press_nav) + " | " + str(p_press_res)
-            # print str(r_press_inf) + " | " + str(r_press_nav) + " | " + str(r_press_res)
             print "Accuracy: {0:.2f}".format(accuracy/3000)
             print
+            #
+            # Precision = tp/tp+fp (número de preguntas respondidas correctamente / número de preguntas intentadas)
+            # Recall =  tp/tp+fn (número de preguntas respondidas correctamente / número de preguntas en el test-set)
+            # tp = clasificación correcta de ejemplos positivos True positive
+            # fp = clasificación incorrecta de ejemplos positivos False positive
+            # fn = clasificación incorrecta de ejemplos negativos False negative
+            #
+            try:
+                press_inf = p_press_inf/r_press_inf
+                recall_inf = p_press_inf/total_inf
+            except:
+                press_inf = 0
+                recall_inf = 0
+            try:    
+                press_nav = p_press_nav/r_press_nav
+                recall_nav = p_press_nav/total_nav
+            except:
+                press_nav = 0
+                recall_nav = 0
+            try:
+                press_res = p_press_res/r_press_res
+                recall_res = p_press_res/total_res
+            except:
+                press_res = 0
+                recall_res = 0
 
-            press_inf = p_press_inf/total_inf
-            recall_inf = r_press_inf/total_inf
-            
-            press_nav = p_press_nav/total_nav
-            recall_nav = r_press_nav/total_nav
-            
-            press_res = p_press_res/total_res
-            recall_res = r_press_res/total_res
-            
             headers = ["Categoria", "Precision", "Recall", "F-Score"]
             table = [
-                ["INF", "{0:.2f}".format(press_inf), "{0:.2f}".format(recall_inf), f_score(press_inf, recall_inf, 1) ],
+                ["INF", "{0:.2f}".format(press_inf), "{0:.2f}".format(recall_inf), "{0:.2f}".format(f_score(press_inf, recall_inf, 1)) ],
                 ["NAV", "{0:.2f}".format(press_nav), "{0:.2f}".format(recall_nav), "{0:.2f}".format(f_score(press_nav, recall_nav, 1)) ],
                 ["RES", "{0:.2f}".format(press_res), "{0:.2f}".format(recall_res), "{0:.2f}".format(f_score(press_res, recall_res, 1)) ]
             ]
