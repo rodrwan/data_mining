@@ -346,9 +346,9 @@ if __name__=="__main__":
             ######################################## FINAL DE LOS CALCULOS #############################################################
 
             accuracy = 0.0
-            r_press_inf, p_press_inf, total_inf = 0.0, 0.0, 0.0
-            r_press_nav, p_press_nav, total_nav = 0.0, 0.0, 0.0
-            r_press_res, p_press_res, total_res = 0.0, 0.0, 0.0
+            inf_incorrectos, inf_correctos, total_inf, total_inf_ini = 0.0, 0.0, 0.0, 0.0
+            nav_incorrectos, nav_correctos, total_nav, total_nav_ini = 0.0, 0.0, 0.0, 0.0
+            res_incorrectos, res_correctos, total_res, total_res_ini = 0.0, 0.0, 0.0, 0.0
 
             for i in range(0, len(inf)):
                 cat = min_val(inf[i] , nav[i] , res[i])
@@ -357,30 +357,54 @@ if __name__=="__main__":
                 #print "%.2f | %.2f | %.2f | %s | %s " % (inf[i] , nav[i] , res[i], min_val(inf[i] , nav[i] , res[i]), category[i])
                 
                 # número de preguntas respondidas correctamente   
-                if cat == "INF" and category[i] == "INF": 
-                    p_press_inf += 1.0
-                elif cat == "NAV" and category[i] == "NAV":
-                    p_press_nav += 1.0
-                elif cat == "RES" and category[i] == "RES":
-                    p_press_res += 1.0
-                
-                # número de preguntas intentadas
-                if cat == "INF": 
-                    r_press_inf += 1.0
-                elif cat == "NAV":
-                    r_press_nav += 1.0
-                elif cat == "RES":
-                    r_press_res += 1.0
+                if cat == category[i]:
+                    if cat == "INF":
+                        inf_correctos += 1.0
+                    elif cat == "NAV":
+                        nav_correctos += 1.0
+                    elif cat == "RES":
+                        res_correctos += 1.0
+                # número de preguntas respondidas erroneas
+                else:
+                    if category[i] == "INF":
+                        if cat == "NAV":
+                            inf_incorrectos += 1.0
+                        if cat == "RES":
+                            inf_incorrectos += 1.0
+                    if category[i] == "NAV":
+                        if cat == "INF":
+                            nav_incorrectos += 1.0
+                        if cat == "RES":
+                            nav_incorrectos += 1.0
+                    if category[i] == "RES":
+                        if cat == "INF":
+                            res_incorrectos += 1.0
+                        if cat == "NAV":
+                            res_incorrectos += 1.0
 
-                # total
-                if category[i] == "INF": 
+                # total encontrados
+                if cat == "INF": 
                     total_inf += 1.0
-                elif category[i] == "NAV":
+                elif cat == "NAV":
                     total_nav += 1.0
-                elif category[i] == "RES":
+                elif cat == "RES":
                     total_res += 1.0
 
-            print str(r_press_inf) + " | " + str(r_press_nav) + " | " + str(r_press_res)
+                # total iniciales
+                if category[i] == "INF": 
+                    total_inf_ini += 1.0
+                elif category[i] == "NAV":
+                    total_nav_ini += 1.0
+                elif category[i] == "RES":
+                    total_res_ini += 1.0
+
+            headers = ["Categoria", "Iniciales", "Obtenidos", "Correctos", "Incorrectos"]
+            table = [
+                ["INF", total_inf_ini, total_inf, inf_correctos, inf_incorrectos],
+                ["NAV", total_nav_ini, total_nav, nav_correctos, nav_incorrectos],
+                ["INF", total_res_ini, total_res, res_correctos, res_incorrectos]
+            ]
+            print tabulate(table, headers, tablefmt="orgtbl")
             print "Accuracy: {0:.2f}".format(accuracy/3000)
             print
             #
@@ -390,25 +414,34 @@ if __name__=="__main__":
             # fp = clasificación incorrecta de ejemplos positivos False positive
             # fn = clasificación incorrecta de ejemplos negativos False negative
             #
+            # CALCULO PRECISION
             try:
-                press_inf = p_press_inf/r_press_inf
-                recall_inf = p_press_inf/total_inf
+                press_inf = (inf_correctos)/total_inf
             except:
                 press_inf = 0
-                recall_inf = 0
             try:    
-                press_nav = p_press_nav/r_press_nav
-                recall_nav = p_press_nav/total_nav
+                press_nav = (nav_correctos)/total_nav
             except:
                 press_nav = 0
-                recall_nav = 0
             try:
-                press_res = p_press_res/r_press_res
-                recall_res = p_press_res/total_res
+                press_res = (res_correctos)/total_res
             except:
                 press_res = 0
-                recall_res = 0
 
+            # CALCULO RECALL
+            try:
+                recall_inf = (inf_correctos)/total_inf_ini
+            except:
+                recall_inf = 0
+            try:    
+                recall_nav = (nav_correctos)/total_nav_ini
+            except:
+                recall_nav = 0
+            try:
+                recall_res = (res_correctos)/total_res_ini
+            except:
+                recall_res = 0
+            
             headers = ["Categoria", "Precision", "Recall", "F-Score"]
             table = [
                 ["INF", "{0:.2f}".format(press_inf), "{0:.2f}".format(recall_inf), "{0:.2f}".format(f_score(press_inf, recall_inf, 1)) ],
