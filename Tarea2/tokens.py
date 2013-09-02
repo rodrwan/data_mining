@@ -402,7 +402,7 @@ if __name__=="__main__":
             table = [
                 ["INF", total_inf_ini, total_inf, inf_correctos, inf_incorrectos],
                 ["NAV", total_nav_ini, total_nav, nav_correctos, nav_incorrectos],
-                ["INF", total_res_ini, total_res, res_correctos, res_incorrectos]
+                ["RES", total_res_ini, total_res, res_correctos, res_incorrectos]
             ]
             print tabulate(table, headers, tablefmt="orgtbl")
             print "Accuracy: {0:.2f}".format(accuracy/3000)
