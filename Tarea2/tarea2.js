@@ -14,4 +14,3 @@ fs.readFileSync(inputFile).toString().split('\n').forEach(function (line) {
 
     fs.appendFileSync('new_'+inputFile, data);
 });
-

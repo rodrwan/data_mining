@@ -19,4 +19,3 @@ Lo cual debería instalar todas las dependencias necesarias para ejecutar el pri
 Con el siguiente comando se ejecuta el script de la tarea 1:
 
 > node tarea1.js [nombre archivos con data]
-
