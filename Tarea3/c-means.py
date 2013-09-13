@@ -1,12 +1,97 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+################################################################################
+# Peach - Computational Intelligence for Python
+# Jose Alexandre Nalon
+#
+# This file: fuzzy/cmeans.py
+# Fuzzy C-Means algorithm
+################################################################################
+
+# Doc string, reStructuredText formatted:
+__doc__ = """
+Fuzzy C-Means
+
+Fuzzy C-Means is a clustering algorithm based on fuzzy logic.
+
+This package implements the fuzzy c-means algorithm for clustering and
+classification. This algorithm is very simple, yet very efficient. From a
+training set and an initial condition which gives the membership values of each
+example in the training set to the clusters, it converges very fastly to crisper
+sets.
+
+The initial conditions, ie, the starting membership, must follow some rules.
+Please, refer to any bibliography about the subject to see why. Those rules are:
+no example might have membership 1 in every class, and the sum of the membership
+of every component must be equal to 1. This means that the initial condition is
+a fuzzy partition of the universe.
+"""
+
+
+################################################################################
+import numpy
+from numpy import dot, array, sum, zeros, outer
+from numpy.random.mtrand import dirichlet
 import nltk, re, sys 
 from collections import Counter
-import numpy as np
-from math import sqrt, pow
 from tabulate import tabulate
-from numpy.random import rand
-from scipy.cluster.vq import kmeans, vq
+
+################################################################################
+# Fuzzy C-Means class
+################################################################################
+class FuzzyCMeans(object):
+    def __init__(self, training_set, initial_conditions, m=2.):
+        self.__x = array(training_set)
+        self.__mu = array(initial_conditions)
+        self.m = m
+        self.__c = self.centers()
+
+    def __getc(self):
+        return self.__c
+    def __setc(self, c):
+        self.__c = array(reshape(c, self.__c.shape))
+    c = property(__getc, __setc)
+
+    def __getmu(self):
+        return self.__mu
+    mu = property(__getmu, None)
+
+    def __getx(self):
+        return self.__x
+    x = property(__getx, None)
+
+    def centers(self):
+        mm = self.__mu ** self.m
+        c = dot(self.__x.transpose(), mm) / sum(mm, axis=0)
+        self.__c = c.transpose()
+        return self.__c
+
+    def membership(self):
+        x = self.__x
+        c = self.__c
+        M, _ = x.shape
+        C, _ = c.shape
+        r = zeros((M, C))
+        m1 = 1./(self.m-1.)
+        for k in range(M):
+            den = sum((x[k] - c)**2., axis=1)
+            frac = outer(den, 1./den)**m1
+            r[k, :] = 1. / sum(frac, axis=1)
+        self.__mu = r
+        return self.__mu
+
+    def step(self):
+        old = self.__mu
+        self.membership()
+        self.centers()
+        return sum(self.__mu - old)**2.
+
+    def __call__(self, emax=1.e-10, imax=20):
+        error = 1.
+        i = 0
+        while error > emax and i < imax:
+            error = self.step()
+            i = i + 1
+        return self.c
+
 
 def token(files):
     stop_words = [
@@ -37,11 +122,22 @@ def f_score(pres, recall, beta):
         return factor*(numerador/denominador)
     except:
         return 0
+        
+def min_val(val1, val2, val3):
+    mini = min(val1, val2, val3)
+    if mini == val1:
+        lower = "INF"
+    elif mini == val2:
+        lower = "NAV"
+    elif mini == val3:
+        lower = "RES"
 
-"""
-PARTE PRINCIPAL PROGRAMA
-"""
-if __name__=="__main__":
+    return lower
+
+################################################################################
+# Test.
+if __name__ == "__main__":
+
     if len(sys.argv) < 2:
         raise NameError('>>> Faltan Parametros.')
     else:
@@ -88,23 +184,28 @@ if __name__=="__main__":
                 arrQuery[bag_of_word.index( j[0] )] = j[1]
             matrix.append(arrQuery)
         
-        matrix = np.array(matrix)
-        centroids, dist = kmeans(matrix, 3)
-        idx, distanc = vq(matrix, centroids)
+        # random matrix
+        Matrix_U = []
+        
+        for i in range(0,len(matrix)):
+            Ui = dirichlet([1] * 3)
+            Matrix_U.append(Ui)
+
+        c = FuzzyCMeans(matrix, Matrix_U)
         inf = 0
         nav = 0
         res = 0
         categoryArray = []
-        for i in idx:
-            if i == 0:
-                categoryArray.append('INF')
+        for val in c.mu:
+            cat = min_val(val[0], val[1], val[2])
+            categoryArray.append(cat)
+            if cat == 'INF':
                 inf += 1
-            elif i == 1:
-                categoryArray.append('NAV')
-                nav += 1
-            elif i == 2:
-                categoryArray.append('RES')
-                res += 1
+            elif cat == 'NAV':
+                nav +=1
+            elif cat == 'RES':
+                res +=1
+
         print
         j = 0
         accuracy = 0.0
@@ -208,4 +309,3 @@ if __name__=="__main__":
         print
         fi.close()
         sys.exit()
-                   
