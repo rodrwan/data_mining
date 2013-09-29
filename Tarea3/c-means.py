@@ -1,32 +1,4 @@
 ################################################################################
-# Peach - Computational Intelligence for Python
-# Jose Alexandre Nalon
-#
-# This file: fuzzy/cmeans.py
-# Fuzzy C-Means algorithm
-################################################################################
-
-# Doc string, reStructuredText formatted:
-__doc__ = """
-Fuzzy C-Means
-
-Fuzzy C-Means is a clustering algorithm based on fuzzy logic.
-
-This package implements the fuzzy c-means algorithm for clustering and
-classification. This algorithm is very simple, yet very efficient. From a
-training set and an initial condition which gives the membership values of each
-example in the training set to the clusters, it converges very fastly to crisper
-sets.
-
-The initial conditions, ie, the starting membership, must follow some rules.
-Please, refer to any bibliography about the subject to see why. Those rules are:
-no example might have membership 1 in every class, and the sum of the membership
-of every component must be equal to 1. This means that the initial condition is
-a fuzzy partition of the universe.
-"""
-
-
-################################################################################
 import numpy
 from numpy import dot, array, sum, zeros, outer
 from numpy.random.mtrand import dirichlet
@@ -84,12 +56,20 @@ class FuzzyCMeans(object):
         self.centers()
         return sum(self.__mu - old)**2.
 
-    def __call__(self, emax=1.e-10, imax=20):
+    def __call__(self, imax): 
+        emax=1e-10
         error = 1.
         i = 0
-        while error > emax and i < imax:
+        while i < imax: 
             error = self.step()
             i = i + 1
+            print emax
+            print error
+            if emax > error:
+                break
+        print 
+        print
+        print 'K: ' + str(imax)
         return self.c
 
 
@@ -122,7 +102,7 @@ def f_score(pres, recall, beta):
         return factor*(numerador/denominador)
     except:
         return 0
-        
+
 def min_val(val1, val2, val3):
     mini = min(val1, val2, val3)
     if mini == val1:
@@ -138,10 +118,11 @@ def min_val(val1, val2, val3):
 # Test.
 if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         raise NameError('>>> Faltan Parametros.')
     else:
         arch = sys.argv[1]
+        kmax = int(sys.argv[2])
         fi =  open(arch, 'r')
         content = fi.readlines()
         globalWords = {}
@@ -190,8 +171,9 @@ if __name__ == "__main__":
         for i in range(0,len(matrix)):
             Ui = dirichlet([1] * 3)
             Matrix_U.append(Ui)
-
+        
         c = FuzzyCMeans(matrix, Matrix_U)
+        c(kmax)
         inf = 0
         nav = 0
         res = 0
@@ -232,33 +214,33 @@ if __name__ == "__main__":
                 countINF,
                 inf,
                 accuracyInf,
-                inf-accuracyInf,
+                abs(accuracyInf-inf),
                 "{0:.2f}".format(accuracyInf/countINF), 
-                "{0:.2f}".format((inf-accuracyInf)/countINF), 
-                "{0:.2f}".format((inf-accuracyInf)/inf) if inf > 0 else 0, 
-                "{0:.2f}".format(f_score((inf-accuracyInf)/inf if inf > 0 else 0, (inf-accuracyInf)/countINF, 1))
+                "{0:.2f}".format(accuracyInf/countINF), 
+                "{0:.2f}".format(accuracyInf/inf) if inf > 0 else 0., 
+                "{0:.2f}".format(f_score(accuracyInf/inf if inf > 0 else 0., accuracyInf/countINF, 1))
             ],
             [
                 "NAV", 
                 countNAV,
                 nav,
                 accuracyNav,
-                nav-accuracyNav,
+                abs(accuracyNav-nav),
                 "{0:.2f}".format(accuracyNav/countNAV), 
-                "{0:.2f}".format((nav-accuracyNav)/countNAV), 
-                "{0:.2f}".format((nav-accuracyNav)/nav) if nav > 0 else 0, 
-                "{0:.2f}".format(f_score((nav-accuracyNav)/nav if nav > 0 else 0, (nav-accuracyNav)/countNAV, 1))
+                "{0:.2f}".format(accuracyNav/countNAV), 
+                "{0:.2f}".format(accuracyNav/nav) if nav > 0 else 0, 
+                "{0:.2f}".format(f_score(accuracyNav/nav if nav > 0 else 0., accuracyNav/countNAV, 1))
             ],
             [
                 "RES", 
                 countRES,
                 res,
                 accuracyRes,
-                res-accuracyRes,
+                abs(accuracyRes-res),
                 "{0:.2f}".format(accuracyRes/countRES), 
-                "{0:.2f}".format((res-accuracyRes)/countRES), 
-                "{0:.2f}".format((res-accuracyRes)/res) if res > 0 else 0,
-                "{0:.2f}".format(f_score((res-accuracyRes)/res if res > 0 else 0, (res-accuracyRes)/countRES, 1))
+                "{0:.2f}".format(abs(accuracyRes-res)/countRES), 
+                "{0:.2f}".format(abs(accuracyRes)/res) if res > 0 else 0.,
+                "{0:.2f}".format(f_score(abs(accuracyRes)/res if res > 0 else 0., abs(accuracyRes-res)/countRES, 1))
             ]
         ]
         print tabulate(table, headers, tablefmt="orgtbl")

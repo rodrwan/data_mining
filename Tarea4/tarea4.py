@@ -1,3 +1,13 @@
+import numpy as np
+
+from sklearn.cluster import DBSCAN
+from sklearn import metrics
+from sklearn.datasets.samples_generator import make_blobs
+from sklearn.preprocessing import StandardScaler
+
+
+##############################################################################
+# Generate sample data
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 import nltk, re, sys 
@@ -46,6 +56,8 @@ if __name__=="__main__":
         raise NameError('>>> Faltan Parametros.')
     else:
         arch = sys.argv[1]
+        eps = float(sys.argv[2])
+        minPts = int(sys.argv[3])
         fi =  open(arch, 'r')
         content = fi.readlines()
         globalWords = {}
@@ -88,124 +100,35 @@ if __name__=="__main__":
                 arrQuery[bag_of_word.index( j[0] )] = j[1]
             matrix.append(arrQuery)
         
-        matrix = np.array(matrix)
-        centroids, dist = kmeans(matrix, 3)
-        idx, distanc = vq(matrix, centroids)
-        inf = 0.
-        nav = 0.
-        res = 0.
-        categoryArray = []
-        for i in idx:
-            if i == 0:
-                categoryArray.append('INF')
-                inf += 1.
+        X = np.array(matrix)
+        ##############################################################################
+        # Compute DBSCAN
+        print "Eps: " + str(eps)
+        print "minPts: " + str(minPts)
+        db = DBSCAN(eps=eps, min_samples=minPts).fit(X)
+        core_samples = db.core_sample_indices_
+        labels = db.labels_
+        inf = 0.0
+        nav = 0.0
+        res = 0.0
+        other = 0.0
+        pts = []
+        for i in labels:
+            pts.append( i )
+            if i == -1:
+                inf += 1
+            elif i == 0:
+                nav += 1
             elif i == 1:
-                categoryArray.append('NAV')
-                nav += 1.
-            elif i == 2:
-                categoryArray.append('RES')
-                res += 1.
+                res += 1
+            else:
+                other += 1
+        print "Min point: " + str(min(pts))
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
         print
-        j = 0
-        accuracy = 0.0
-        accuracyInf = 0.0
-        accuracyNav = 0.0
-        accuracyRes = 0.0
-
-        for i in content:
-            etiqueta = i.split('\t')[0]
-            if etiqueta == categoryArray[j]:
-                accuracy += 1.0
-                if categoryArray[j] == 'INF':
-                    accuracyInf += 1.
-                elif categoryArray[j] == 'NAV':
-                    accuracyNav += 1.
-                elif categoryArray[j] == 'RES':
-                    accuracyRes += 1.
-            j += 1
-
-        headers = ["Categoria", "Iniciales", "Obtenidos", "Correctos", "Incorrectos", "Accuracy", "Recall", "Precision", "F-Score"] #
-        table = [
-            [
-                "INF",
-                countINF,
-                inf,
-                accuracyInf,
-                abs(accuracyInf-inf),
-                "{0:.2f}".format(accuracyInf/countINF), 
-                "{0:.2f}".format(accuracyInf/countINF), 
-                "{0:.2f}".format(accuracyInf/inf) if inf > 0 else 0., 
-                "{0:.2f}".format(f_score(accuracyInf/inf if inf > 0 else 0., accuracyInf/countINF, 1))
-            ],
-            [
-                "NAV", 
-                countNAV,
-                nav,
-                accuracyNav,
-                abs(accuracyNav-nav),
-                "{0:.2f}".format(accuracyNav/countNAV), 
-                "{0:.2f}".format(accuracyNav/countNAV), 
-                "{0:.2f}".format(accuracyNav/nav) if nav > 0 else 0, 
-                "{0:.2f}".format(f_score(accuracyNav/nav if nav > 0 else 0., accuracyNav/countNAV, 1))
-            ],
-            [
-                "RES", 
-                countRES,
-                res,
-                accuracyRes,
-                abs(accuracyRes-res),
-                "{0:.2f}".format(accuracyRes/countRES), 
-                "{0:.2f}".format(abs(accuracyRes-res)/countRES), 
-                "{0:.2f}".format(abs(accuracyRes)/res) if res > 0 else 0.,
-                "{0:.2f}".format(f_score(abs(accuracyRes)/res if res > 0 else 0., abs(accuracyRes-res)/countRES, 1))
-            ]
-        ]
-        print tabulate(table, headers, tablefmt="orgtbl")
+        print(" INF: %d\n NAV: %d\n RES: %d\n NOISE: %d\n" % (inf, nav, res, other))
+        print('Estimated number of clusters: %d' % n_clusters_)
         print
-        print "Accuracy: {0:.2f}".format(accuracy/3000)
-        print
-
-        inf_inf, nav_inf, res_inf = 0.0, 0.0, 0.0
-        inf_nav, nav_nav, res_nav = 0.0, 0.0, 0.0
-        inf_res, nav_res, res_res = 0.0, 0.0, 0.0
+        ##############################################################################
         
-        j = 0
-        for i in content:
-            tag = i.split('\t')[0]
-            if tag == 'INF':
-                if categoryArray[j] == 'INF':
-                    inf_inf += 1.
-                elif categoryArray[j] == 'NAV':
-                    nav_inf += 1.
-                elif categoryArray[j] == 'RES':
-                    res_inf += 1.
-            
-            elif tag == 'NAV':
-                if categoryArray[j] == 'INF':
-                    inf_nav += 1.
-                elif categoryArray[j] == 'NAV':
-                    nav_nav += 1.
-                elif categoryArray[j] == 'RES':
-                    res_nav += 1.
-            
-            elif tag == 'RES':
-                if categoryArray[j] == 'INF':
-                    inf_res += 1.
-                elif categoryArray[j] == 'NAV':
-                    nav_res += 1.
-                elif categoryArray[j] == 'RES':
-                    res_res += 1.
-            j += 1
-        
-        print "Matriz de confusion:"
-        headers = ["INF", "NAV", "RES", "Total"]
-        table = [
-            ["INF", inf_inf, nav_inf, res_inf, countINF],
-            ["NAV", inf_nav, nav_nav, res_nav, countNAV],
-            ["RES", inf_res, nav_res, res_res, countRES]
-        ]
-        print tabulate(table, headers, tablefmt="orgtbl")
-        print
-        fi.close()
-        sys.exit()
-                   
