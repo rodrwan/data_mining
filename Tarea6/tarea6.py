@@ -1,13 +1,3 @@
-import numpy as np
-
-from sklearn.cluster import DBSCAN
-from sklearn import metrics
-from sklearn.datasets.samples_generator import make_blobs
-from sklearn.preprocessing import StandardScaler
-
-
-##############################################################################
-# Generate sample data
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 import nltk, re, sys 
@@ -17,6 +7,9 @@ from math import sqrt, pow
 from tabulate import tabulate
 from numpy.random import rand
 from scipy.cluster.vq import kmeans, vq
+import numpy;
+import scipy;
+import nltk;
 
 def token(files):
     stop_words = [
@@ -48,16 +41,39 @@ def f_score(pres, recall, beta):
     except:
         return 0
 
+def mintag(x, y, z):
+    minimum = min(x, y, z)
+    if x == minimum:
+        return "INF"
+    elif y == minimum:
+        return "NAV"
+    elif z == minimum:
+        return "RES"
+
+def test_maxent(algorithms, train, test):
+    classifiers = {}
+    try:
+        classifiers[algorithms] = nltk.MaxentClassifier.train(train, algorithms, max_iter=2)
+    except Exception, e:
+        classifiers[algorithm] = e
+    for algorithm, classifier in classifiers.items():
+        # print '%11s' % algorithm,
+        if isinstance(classifier, Exception):
+            print 'Error: %r' % classifier; continue
+        tag_results = []  
+        for featureset in test:
+            pdist = classifier.prob_classify(featureset)
+            # print '%s%6.2f%6.2f%6.2f' % (mintag(pdist.prob('INF'), pdist.prob('NAV'), pdist.prob('RES')), pdist.prob('INF'), pdist.prob('NAV'), pdist.prob('RES'))
+            tag_results.append( mintag( pdist.prob('INF'), pdist.prob('NAV'), pdist.prob('RES') ) )
+        return tag_results
 """
 PARTE PRINCIPAL PROGRAMA
 """
 if __name__=="__main__":
     if len(sys.argv) < 2:
-        raise NameError('>>> Faltan Parametros.')
+        raise NameError(">>> Faltan Parametros.")
     else:
         arch = sys.argv[1]
-        eps = int(sys.argv[2])
-        minPts = int(sys.argv[3])
         fi =  open(arch, 'r')
         content = fi.readlines()
         globalWords = {}
@@ -67,13 +83,19 @@ if __name__=="__main__":
         for i in content:
 
             data = i.split('\t')
-            if data[0] == 'INF':
+            if data[0] == "INF":
                 countINF += 1
-            elif data[0] == 'NAV':
+            elif data[0] == "NAV":
                 countNAV += 1
-            elif data[0] == 'RES':
+            elif data[0] == "RES":
                 countRES += 1
-            category.append(data[0])
+            if data[0] == "INF":
+                category.append("INF")
+            elif data[0] == "NAV":
+                category.append("NAV")
+            elif data[0] == "RES":
+                category.append("RES")
+                
             querys.append(data[1].rstrip())
             tok = token(data[1].rstrip())
             query = []
@@ -92,78 +114,94 @@ if __name__=="__main__":
             bag_of_word_num.append(globalWords[word])
 
         matrix = []
-
+        index_cat = 0
         for glosa in querys:
             tok = token(glosa)
-            arrQuery = [0]*len(bag_of_word)
-            for j  in tok:
-                arrQuery[bag_of_word.index( j[0] )] = j[1]
-            matrix.append(arrQuery)
-        
-        X = np.array(matrix)
-        ##############################################################################
-        # Compute DBSCAN
-        for e in range(0, eps):
-            for m in range(0, minPts):
-                #print "Eps: " + str(e+1)
-                #print "minPts: " + str(m+1)
-                db = DBSCAN(eps=(e+1), min_samples=(m+1)).fit(X)
-                core_samples = db.core_sample_indices_
-                labels = db.labels_
-                
-                inf = 0.
-                nav = 0.
-                res = 0.
-                noise = 0.
-                categoryArray = []
-                for i in labels:
-                    if i == -1:
-                        categoryArray.append('INF')
-                        inf += 1.
-                    elif i == 0:
-                        categoryArray.append('NAV')
-                        nav += 1.
-                    elif i == 1:
-                        categoryArray.append('RES')
-                        res += 1.
+            arrQuery = {} # [0]*len(bag_of_word)
+            arrQueryFinal = ''
+            l = 0
+            for k in globalWords:
+                for j in tok:
+                    if k == j[0]:
+                        arrQuery[l] = j[1]
                     else:
-                        categoryArray.append('NOISE')
-                        noise += 1.
-                print
+                        arrQuery[l] = 0
+                l += 1
 
-                j = 0
-                accuracy = 0.
-                accuracyInf = 0.
-                accuracyNav = 0.
-                accuracyRes = 0.
-                accuracyNoise = 0.
+            matrix.append( arrQuery )
 
-                for i in content:
-                    etiqueta = i.split('\t')[0]
-                    if etiqueta == categoryArray[j]:
-                        accuracy += 1.0
-                        if categoryArray[j] == 'INF':
-                            accuracyInf += 1.
-                        elif categoryArray[j] == 'NAV':
-                            accuracyNav += 1.
-                        elif categoryArray[j] == 'RES':
-                            accuracyRes += 1.
-                        else:
-                            accuracyNoise += 1.
-                    j += 1
+        k_min = 1
+        k_max = 300
+        # for i in range(1, 11):
+        l = 0
+        train = []
+        test = []
+        print str(k_min) + " -> " + str(k_max)
+        for j in matrix:
+            if l >= k_min and l <= k_max:
+                train.append( (j, category[l] ) )
+            test.append( (j) )
+                
+            l += 1
+        k_min += 300
+        k_max += 300
+        
+        print len(train)
+        print len(test)
+        #test_maxent(nltk.classify.MaxentClassifier.ALGORITHMS, train, test)
+        #test_maxent( 'IIS', train, test )
+        # sub_test = []
+        # for i in range(0, 300):
+        #     sub_test.append(category[i])
 
-                headers = ["Eps", "MinPts", "NOISE"] #
-                table = [
-                    [
-                        (e+1),
-                        (m+1),
-                        noise,
-                    ],
-                ]
-                print tabulate(table, headers, tablefmt="orgtbl")
-                #print
-                #print "Accuracy: {0:.2f}".format(accuracy/3000)
-                #print
-                #print "####################################################################"
-                #print
+        tag_results = test_maxent( 'GIS', train, test )
+        print 
+        acurracy = 0.
+        for i in range(0, len(tag_results)):
+            # print str(category[i]) + " " + str(tag_results[i])
+            if (category[i] == tag_results[i]):
+                acurracy += 1
 
+        print "Acurracy: " + str(acurracy/3000)
+        print 
+
+        inf_inf, nav_inf, res_inf = 0.0, 0.0, 0.0
+        inf_nav, nav_nav, res_nav = 0.0, 0.0, 0.0
+        inf_res, nav_res, res_res = 0.0, 0.0, 0.0
+
+        for i in range(0, len(tag_results)):
+            if category[i] == 'INF':
+                if tag_results[i] == 'INF':
+                    inf_inf += 1.
+                elif tag_results[i] == 'NAV':
+                    nav_inf += 1.
+                elif tag_results[i] == 'RES':
+                    res_inf += 1.
+            
+            elif category[i] == 'NAV':
+                if tag_results[i] == 'INF':
+                    inf_nav += 1.
+                elif tag_results[i] == 'NAV':
+                    nav_nav += 1.
+                elif tag_results[i] == 'RES':
+                    res_nav += 1.
+            
+            elif category[i] == 'RES':
+                if tag_results[i] == 'INF':
+                    inf_res += 1.
+                elif tag_results[i] == 'NAV':
+                    nav_res += 1.
+                elif tag_results[i] == 'RES':
+                    res_res += 1.
+        
+        print "Matriz de confusion:"
+        headers = ["INF", "NAV", "RES", "Total"]
+        table = [
+            ["INF", inf_inf, nav_inf, res_inf, countINF],
+            ["NAV", inf_nav, nav_nav, res_nav, countNAV],
+            ["RES", inf_res, nav_res, res_res, countRES]
+        ]
+        print tabulate(table, headers, tablefmt="orgtbl")
+        print
+            #fof.close()
+            #fom.close()

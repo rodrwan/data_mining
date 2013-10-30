@@ -1,13 +1,3 @@
-import numpy as np
-
-from sklearn.cluster import DBSCAN
-from sklearn import metrics
-from sklearn.datasets.samples_generator import make_blobs
-from sklearn.preprocessing import StandardScaler
-
-
-##############################################################################
-# Generate sample data
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 import nltk, re, sys 
@@ -17,6 +7,11 @@ from math import sqrt, pow
 from tabulate import tabulate
 from numpy.random import rand
 from scipy.cluster.vq import kmeans, vq
+from nltk.tag.stanford import POSTagger
+from nltk.tokenize import word_tokenize
+path_to_model = 'C:/Users/rodrwan/Desktop/data mining/data_mining/Tarea4/stanford-postagger/models/left3words-wsj-0-18.tagger'
+path_to_jar = 'C:/Users/rodrwan/Desktop/data mining/data_mining/Tarea4/stanford-postagger/stanford-postagger.jar'
+st = POSTagger(path_to_model, path_to_jar)
 
 def token(files):
     stop_words = [
@@ -56,87 +51,104 @@ if __name__=="__main__":
         raise NameError('>>> Faltan Parametros.')
     else:
         arch = sys.argv[1]
-        eps = int(sys.argv[2])
-        minPts = int(sys.argv[3])
         fi =  open(arch, 'r')
         content = fi.readlines()
-        globalWords = {}
+        category = []
+        
         countINF, countNAV, countRES = 0.0, 0.0, 0.0
-        querys, category = [], []
-
+        S = []
+        S_p = []
+        querys = []
         for i in content:
+            
+            data = i.rstrip().split('\t')
+            query = data[1]
 
-            data = i.split('\t')
             if data[0] == 'INF':
                 countINF += 1
             elif data[0] == 'NAV':
                 countNAV += 1
             elif data[0] == 'RES':
                 countRES += 1
-            category.append(data[0])
-            querys.append(data[1].rstrip())
-            tok = token(data[1].rstrip())
-            query = []
             
-            for j in tok:
-                if str(j[0]) in globalWords:
-                    globalWords[str(j[0])] += j[1]
-                else:
-                    globalWords[str(j[0])] = j[1]
+            category.append(data[0])
+            querys.append(query)
 
-        bag_of_word, bag_of_word_num, bag_of_word_count = [], [], 0
-
-        for word in globalWords.keys():
-            bag_of_word.append(word)
-            bag_of_word_count += globalWords[word]
-            bag_of_word_num.append(globalWords[word])
-
-        matrix = []
-
-        for glosa in querys:
-            tok = token(glosa)
-            arrQuery = [0]*len(bag_of_word)
-            for j  in tok:
-                arrQuery[bag_of_word.index( j[0] )] = j[1]
-            matrix.append(arrQuery)
+        best_accuracy = []
+        headers = ["Categorias", "Accuracy" ]#
+        table = []
+        X = ['NNP', 'NN', 'NNS', 'JJ', 'CD', 'VB']    
         
-        X = np.array(matrix)
-        ##############################################################################
-        # Compute DBSCAN
-        for e in range(0, eps):
-            for m in range(0, minPts):
-                #print "Eps: " + str(e+1)
-                #print "minPts: " + str(m+1)
-                db = DBSCAN(eps=(e+1), min_samples=(m+1)).fit(X)
-                core_samples = db.core_sample_indices_
-                labels = db.labels_
+        X_p = ['NNP', 'NN', 'NNS', 'JJ', 'CD', 'VB']
+        for i in X:
+            for x in X_p:
+                final_query = []
+                if x not in S:
+                    S_p = S + [x]
+                                
+                for query in querys:
+                    datos = query.split(" ")
+
+                    string = ''
+                    k = ''
+                    for s in S_p:
+                        for d in datos:
+                            if s in d:
+                                string += d.split("/")[0] + " "
+                    
+                    final_query.append(string.rstrip())
+                globalWords = {}
+                querys_f = []
+                for data in final_query: 
+                    querys_f.append(data)
+                    tok = token(data)
+                   
+                    for j in tok:
+                        if str(j[0]) in globalWords:
+                            globalWords[str(j[0])] += j[1]
+                        else:
+                            globalWords[str(j[0])] = j[1]
+
+                bag_of_word, bag_of_word_num, bag_of_word_count = [], [], 0
+
+                for word in globalWords.keys():
+                    bag_of_word.append(word)
+                    bag_of_word_count += globalWords[word]
+                    bag_of_word_num.append(globalWords[word])
+
+                matrix = []
+
+                for glosa in querys_f:
+                    tok = token(glosa)
+                    arrQuery = [0]*len(bag_of_word)
+                    for j  in tok:
+                        arrQuery[bag_of_word.index( j[0] )] = j[1]
+                    matrix.append(arrQuery)
                 
+                matrix = np.array(matrix)
+
+                centroids, dist = kmeans(matrix, 3)
+                idx, distanc = vq(matrix, centroids)
                 inf = 0.
                 nav = 0.
                 res = 0.
-                noise = 0.
                 categoryArray = []
-                for i in labels:
-                    if i == -1:
+                for i in idx:
+                    if i == 0:
                         categoryArray.append('INF')
                         inf += 1.
-                    elif i == 0:
+                    elif i == 1:
                         categoryArray.append('NAV')
                         nav += 1.
-                    elif i == 1:
+                    elif i == 2:
                         categoryArray.append('RES')
                         res += 1.
-                    else:
-                        categoryArray.append('NOISE')
-                        noise += 1.
-                print
-
+                
                 j = 0
-                accuracy = 0.
-                accuracyInf = 0.
-                accuracyNav = 0.
-                accuracyRes = 0.
-                accuracyNoise = 0.
+                accuracy = 0.0
+                accuracyInf = 0.0
+                accuracyNav = 0.0
+                accuracyRes = 0.0
 
                 for i in content:
                     etiqueta = i.split('\t')[0]
@@ -148,22 +160,37 @@ if __name__=="__main__":
                             accuracyNav += 1.
                         elif categoryArray[j] == 'RES':
                             accuracyRes += 1.
-                        else:
-                            accuracyNoise += 1.
                     j += 1
+                best_accuracy.append( ( S_p[:], (accuracy/len(final_query)) ) )
+                best = []
+                for b in best_accuracy:
+                    best.append(b[1])
+                pos = 0
+                max_best = max(best)
+                
+                for b in best_accuracy:
+                    if b[1] == max_best:
+                        break
+                    else:
+                        pos += 1
 
-                headers = ["Eps", "MinPts", "NOISE"] #
-                table = [
-                    [
-                        (e+1),
-                        (m+1),
-                        noise,
-                    ],
-                ]
-                print tabulate(table, headers, tablefmt="orgtbl")
-                #print
-                #print "Accuracy: {0:.2f}".format(accuracy/3000)
-                #print
-                #print "####################################################################"
-                #print
+                S = best_accuracy[pos][0]
+                
+                for h in S:
+                    try:
+                        del X_p[X_p.index(h)]
+                    except:
+                        pass
+                # print "S: " + str(S)
+                # print "X: " + str(X_p)
+                # print "A: " + str(accuracy/len(final_query))
+                # print 
+            table.append([ str(S), (accuracy/len(final_query)) ])
+        print  
+        print tabulate(table, headers, tablefmt="orgtbl")
 
+            
+
+
+
+            

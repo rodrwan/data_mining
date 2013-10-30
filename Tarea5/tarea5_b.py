@@ -1,13 +1,3 @@
-import numpy as np
-
-from sklearn.cluster import DBSCAN
-from sklearn import metrics
-from sklearn.datasets.samples_generator import make_blobs
-from sklearn.preprocessing import StandardScaler
-
-
-##############################################################################
-# Generate sample data
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 import nltk, re, sys 
@@ -53,117 +43,91 @@ PARTE PRINCIPAL PROGRAMA
 """
 if __name__=="__main__":
     if len(sys.argv) < 2:
-        raise NameError('>>> Faltan Parametros.')
+        raise NameError(">>> Faltan Parametros.")
     else:
         arch = sys.argv[1]
-        eps = int(sys.argv[2])
-        minPts = int(sys.argv[3])
-        fi =  open(arch, 'r')
+        fi   = open(arch, 'r')
         content = fi.readlines()
-        globalWords = {}
         countINF, countNAV, countRES = 0.0, 0.0, 0.0
-        querys, category = [], []
+        category = []
 
         for i in content:
-
             data = i.split('\t')
-            if data[0] == 'INF':
+            if data[0] == "INF":
                 countINF += 1
-            elif data[0] == 'NAV':
+            elif data[0] == "NAV":
                 countNAV += 1
-            elif data[0] == 'RES':
+            elif data[0] == "RES":
                 countRES += 1
-            category.append(data[0])
-            querys.append(data[1].rstrip())
-            tok = token(data[1].rstrip())
-            query = []
-            
-            for j in tok:
-                if str(j[0]) in globalWords:
-                    globalWords[str(j[0])] += j[1]
-                else:
-                    globalWords[str(j[0])] = j[1]
-
-        bag_of_word, bag_of_word_num, bag_of_word_count = [], [], 0
-
-        for word in globalWords.keys():
-            bag_of_word.append(word)
-            bag_of_word_count += globalWords[word]
-            bag_of_word_num.append(globalWords[word])
-
-        matrix = []
-
-        for glosa in querys:
-            tok = token(glosa)
-            arrQuery = [0]*len(bag_of_word)
-            for j  in tok:
-                arrQuery[bag_of_word.index( j[0] )] = j[1]
-            matrix.append(arrQuery)
+            if data[0] == "INF":
+                category.append(1)
+            elif data[0] == "NAV":
+                category.append(2)
+            elif data[0] == "RES":
+                category.append(3)
         
-        X = np.array(matrix)
-        ##############################################################################
-        # Compute DBSCAN
-        for e in range(0, eps):
-            for m in range(0, minPts):
-                #print "Eps: " + str(e+1)
-                #print "minPts: " + str(m+1)
-                db = DBSCAN(eps=(e+1), min_samples=(m+1)).fit(X)
-                core_samples = db.core_sample_indices_
-                labels = db.labels_
-                
-                inf = 0.
-                nav = 0.
-                res = 0.
-                noise = 0.
-                categoryArray = []
-                for i in labels:
-                    if i == -1:
-                        categoryArray.append('INF')
-                        inf += 1.
-                    elif i == 0:
-                        categoryArray.append('NAV')
-                        nav += 1.
-                    elif i == 1:
-                        categoryArray.append('RES')
-                        res += 1.
-                    else:
-                        categoryArray.append('NOISE')
-                        noise += 1.
-                print
 
-                j = 0
-                accuracy = 0.
-                accuracyInf = 0.
-                accuracyNav = 0.
-                accuracyRes = 0.
-                accuracyNoise = 0.
+        countINFres, countNAVres, countRESres = 0.0, 0.0, 0.0
+        categoryres = []
+        
+        for j in range(1, 11):
+            fi2  = open('results/result_'+ str(j) +'.txt', 'r')
+            content = fi2.readlines()
+            for i in content:
+                data = i.split(' ')
+                if data[0] == "1":
+                    categoryres.append(1)
+                elif data[0] == "2":
+                    categoryres.append(2)
+                elif data[0] == "3":
+                    categoryres.append(3)
+            fi2.close() 
 
-                for i in content:
-                    etiqueta = i.split('\t')[0]
-                    if etiqueta == categoryArray[j]:
-                        accuracy += 1.0
-                        if categoryArray[j] == 'INF':
-                            accuracyInf += 1.
-                        elif categoryArray[j] == 'NAV':
-                            accuracyNav += 1.
-                        elif categoryArray[j] == 'RES':
-                            accuracyRes += 1.
-                        else:
-                            accuracyNoise += 1.
-                    j += 1
+    acurracy = 0.
+    for i in range(0, len(category)):
+        # print str(category[i]) + " " + str(categoryres[i])
+        if (category[i] == categoryres[i]):
+            acurracy += 1
 
-                headers = ["Eps", "MinPts", "NOISE"] #
-                table = [
-                    [
-                        (e+1),
-                        (m+1),
-                        noise,
-                    ],
-                ]
-                print tabulate(table, headers, tablefmt="orgtbl")
-                #print
-                #print "Accuracy: {0:.2f}".format(accuracy/3000)
-                #print
-                #print "####################################################################"
-                #print
+    print "Acurracy: " + str(acurracy/3000)
+    print 
+
+    inf_inf, nav_inf, res_inf = 0.0, 0.0, 0.0
+    inf_nav, nav_nav, res_nav = 0.0, 0.0, 0.0
+    inf_res, nav_res, res_res = 0.0, 0.0, 0.0
+
+    for i in range(0, len(category)):
+        if category[i] == 1:
+            if categoryres[i] == 1:
+                inf_inf += 1.
+            elif categoryres[i] == 2:
+                nav_inf += 1.
+            elif categoryres[i] == 3:
+                res_inf += 1.
+        
+        elif category[i] == 2:
+            if categoryres[i] == 1:
+                inf_nav += 1.
+            elif categoryres[i] == 2:
+                nav_nav += 1.
+            elif categoryres[i] == 3:
+                res_nav += 1.
+        
+        elif category[i] == 3:
+            if categoryres[i] == 1:
+                inf_res += 1.
+            elif categoryres[i] == 2:
+                nav_res += 1.
+            elif categoryres[i] == 3:
+                res_res += 1.
+    
+    print "Matriz de confusion:"
+    headers = ["INF", "NAV", "RES", "Total"]
+    table = [
+        ["INF", inf_inf, nav_inf, res_inf, countINF],
+        ["NAV", inf_nav, nav_nav, res_nav, countNAV],
+        ["RES", inf_res, nav_res, res_res, countRES]
+    ]
+    print tabulate(table, headers, tablefmt="orgtbl")
+    print
 
